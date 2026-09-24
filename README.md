@@ -21,6 +21,6 @@
 To run this project on your own machine for judging or development:
 
 1. **Clone the repository:**
-   ```bash (https://keyysayskeyy.github.io/surplustoshelterindia/index.html)
+   (https://keyysayskeyy.github.io/surplustoshelterindia/index.html)
 
 
