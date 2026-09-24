@@ -22,7 +22,6 @@ To run this project on your own machine for judging or development:
 
 1. **Clone the repository:**
    ```bash
-  [ git clone [https://github.com/your-username/surplus-to-shelter.git](https://github.com/your-username/surplus-to-shelter.git)
-   cd surplus-to-shelter](https://keyysayskeyy.github.io/surplustoshelterindia/index.html)
+ (https://keyysayskeyy.github.io/surplustoshelterindia/index.html)
 
 
