@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Surplus to Shelter | Live Rescue Map</title>
+  
+  <script>
+    (function() {
+      const saved = localStorage.getItem('surplus-theme');
+      if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style1.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-brand">
+      🍲 Surplus to Shelter
+      <span class="navbar-subtitle">Live rescue map</span>
+    </div>
+    <div class="nav-actions">
+      <button id="themeToggle" class="theme-toggle-btn" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+      <a href="index.html" class="btn-back">← Back to dashboard</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Impact Dashboard -->
+    <section class="impact-card">
+      <h2>Real-time impact</h2>
+      <div class="impact-grid">
+        <div class="impact-item">
+          <h3 id="totalMeals">208</h3>
+          <p>Meals Rescued</p>
+        </div>
+        <div class="impact-item">
+          <h3 id="totalWeight">250.0</h3>
+          <p>Kg Food Diverted</p>
+        </div>
+        <div class="impact-item">
+          <h3 id="totalCO2">625.0</h3>
+          <p>Kg CO₂e Avoided</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid -->
+    <div class="grid-layout">
+      <!-- Left Column: Donor Form -->
+      <div class="card">
+        <h3>Post surplus</h3>
+        <form id="foodForm">
+          <div class="form-group">
+            <label class="form-label">Food description</label>
+            <input type="text" id="foodTitle" class="form-control" placeholder="e.g. 20 Veggie Burgers" required>
+          </div>
+
+          <div class="form-row form-group">
+            <div>
+              <label class="form-label">Weight (kg)</label>
+              <input type="number" id="foodWeight" class="form-control" placeholder="5" min="1" max="500" required>
+            </div>
+            <div>
+              <label class="form-label">Expiry (hrs)</label>
+              <input type="number" id="expiry" class="form-control" placeholder="2" min="1" max="48" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Location / Address</label>
+            <input type="text" id="locationName" class="form-control" placeholder="e.g. Malviya Nagar" required>
+          </div>
+
+          <button type="submit" class="btn-submit">Broadcast & match</button>
+        </form>
+      </div>
+
+      <!-- Right Column: Map & Feed -->
+      <div>
+        <div class="card" style="padding: 12px; margin-bottom: 20px;">
+          <div id="map"></div>
+        </div>
+
+        <div class="card">
+          <h3>Live rescue feed</h3>
+          <div id="listings">
+            <div class="empty-alert">No surplus food available right now.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Theme toggle setup
+    const themeBtn = document.getElementById('themeToggle');
+    function updateThemeBtn() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (themeBtn) {
+        themeBtn.textContent = isDark ? '☀️' : '🌙';
+        themeBtn.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      }
+    }
+    if (themeBtn) {
+      updateThemeBtn();
+      themeBtn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('surplus-theme', next);
+        updateThemeBtn();
+      });
+    }
+
+    let map;
+    let markers = [];
+    let donations = [
+      {
+        id: 1,
+        title: "20 Veggie Burgers",
+        weight: 5,
+        expiry: 2,
+        location: "Malviya Nagar",
+        lat: 26.8530,
+        lng: 75.8150,
+        matchedShelter: "Jaipur Food Rescue Bank"
+      }
+    ];
+
+    function initMap() {
+      map = L.map('map').setView([26.83, 75.81], 12);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Shelter marker
+      L.marker([26.8200, 75.8000]).addTo(map)
+        .bindPopup('<b>Jaipur Food Rescue Bank</b><br>Capacity: 500 lbs');
+
+      fetchImpactStats();
+      renderListings();
+      updateMapMarkers();
+    }
+
+    function updateMapMarkers() {
+      markers.forEach(marker => map.removeLayer(marker));
+      markers = [];
+
+      donations.forEach(item => {
+        const marker = L.marker([item.lat, item.lng]).addTo(map)
+          .bindPopup(`<b>${item.title}</b><br>${item.weight} kg at ${item.location}${item.matchedShelter ? `<br><small style="color:#c25528; font-weight:600;">Matched: ${item.matchedShelter}</small>` : ''}`);
+        markers.push(marker);
+      });
+    }
+
+    async function fetchImpactStats() {
+      try {
+        const response = await fetch('http://localhost:3000/api/impact');
+        if (response.ok) {
+          const stats = await response.json();
+          document.getElementById('totalMeals').innerText = stats.mealsRescued || 208;
+          document.getElementById('totalWeight').innerText = parseFloat(stats.weightDivertedLbs || 250).toFixed(1);
+          document.getElementById('totalCO2').innerText = parseFloat(stats.co2eAvoidedKg || 625).toFixed(1);
+        }
+      } catch {
+        const totalW = donations.reduce((sum, d) => sum + (Number(d.weight) || 0), 250);
+        document.getElementById('totalMeals').innerText = Math.floor(totalW * 1.2);
+        document.getElementById('totalWeight').innerText = totalW.toFixed(1);
+        document.getElementById('totalCO2').innerText = (totalW * 2.5).toFixed(1);
+      }
+    }
+
+    function renderListings() {
+      const container = document.getElementById('listings');
+      container.innerHTML = '';
+
+      if (donations.length === 0) {
+        container.innerHTML = '<div class="empty-alert">No surplus food available right now.</div>';
+        return;
+      }
+
+      donations.forEach(item => {
+        container.innerHTML += `
+          <div class="feed-item">
+            <div>
+              <h4>${item.title}</h4>
+              <div>
+                <span class="badge-tag">📍 ${item.location}</span>
+                <span class="badge-tag">⚖️ ${item.weight} kg</span>
+                <span class="badge-tag">⏱️ ${item.expiry} hrs left</span>
+              </div>
+              ${item.matchedShelter ? `<div class="badge-route">✓ Routed to: ${item.matchedShelter}</div>` : ''}
+            </div>
+            <button class="btn-clear" onclick="claimFood(${item.id})">Clear</button>
+          </div>
+        `;
+      });
+    }
+
+    async function fetchCoordinates(address) {
+      try {
+        const query = encodeURIComponent(address + ', Jaipur, Rajasthan');
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+          return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        }
+      } catch (error) {
+        console.warn("Geocoding failed, using approximate area:", error);
+      }
+
+      return { lat: 26.83 + (Math.random() * 0.03), lng: 75.80 + (Math.random() * 0.03) };
+    }
+
+    document.getElementById('foodForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const submitBtn = this.querySelector('button[type="submit"]');
+      submitBtn.innerText = "Routing via backend...";
+      submitBtn.disabled = true;
+
+      const title = document.getElementById('foodTitle').value;
+      const weight = parseFloat(document.getElementById('foodWeight').value);
+      const expiry = document.getElementById('expiry').value;
+      const location = document.getElementById('locationName').value;
+
+      const coords = await fetchCoordinates(location);
+
+      const payload = {
+        itemType: title,
+        quantityLbs: weight,
+        expiryHours: parseInt(expiry),
+        donorLocation: { lat: coords.lat, lng: coords.lng }
+      };
+
+      let matchedShelter = "Jaipur Food Rescue Bank";
+
+      try {
+        const response = await fetch('http://localhost:3000/api/donations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          matchedShelter = result.routeDetails.shelter;
+        }
+      } catch {
+        // Local engine matched to shelter
+      }
+
+      const newItem = {
+        id: Date.now(),
+        title,
+        weight,
+        expiry,
+        location,
+        lat: coords.lat,
+        lng: coords.lng,
+        matchedShelter
+      };
+
+      donations.unshift(newItem);
+      renderListings();
+      updateMapMarkers();
+      fetchImpactStats();
+
+      this.reset();
+      map.setView([coords.lat, coords.lng], 13);
+
+      submitBtn.innerText = "Broadcast & match";
+      submitBtn.disabled = false;
+    });
+
+    function claimFood(id) {
+      donations = donations.filter(item => item.id !== id);
+      renderListings();
+      updateMapMarkers();
+      fetchImpactStats();
+    }
+
+    initMap();
+  </script>
+</body>
+</html>

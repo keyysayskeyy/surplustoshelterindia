@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Surplus to Shelter | Advanced Food Rescue & Logistics</title>
+  
+  <script>
+    (function() {
+      const saved = localStorage.getItem('surplus-theme');
+      if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Top Navigation -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">S</span>
+      <div>
+        <strong>Surplus to Shelter</strong>
+        <small><span class="dispatch-dot" style="width:6px; height:6px;"></span> Community Food Rescue Network</small>
+      </div>
+    </div>
+    
+    <div class="topbar-actions">
+      <button id="unitToggle" class="icon-btn" title="Toggle weight units (kg / lbs)">
+        <span>⚖️</span> <span id="unitLabel">kg</span>
+      </button>
+      <button id="themeToggle" class="theme-toggle-btn" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+      <button id="exportCsvBtn" class="icon-btn" title="Export food rescue manifest as CSV">
+        <span>📥</span> Export
+      </button>
+      <a href="Map.html" class="nav-link">Live map</a>
+      <span class="local-pill"><i></i>Network Active</span>
+      <button class="primary-button" id="headerAddBtn" type="button" style="min-height: 38px; padding: 0 14px; font-size: 0.85rem;">
+        ＋ Post surplus
+      </button>
+    </div>
+  </header>
+
+  <main class="page">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">INTELLIGENT COMMUNITY LOGISTICS</p>
+        <h1>Good food, <em>good places.</em></h1>
+        <p class="lede">A real-time dispatch and routing platform redirecting fresh surplus meals from commercial kitchens, bakeries, and farms to verified community shelters before waste occurs.</p>
+
+        <div class="hero-actions">
+          <button class="primary-button" id="openFormHero" type="button">
+            ＋ Post surplus food
+          </button>
+          <a href="Map.html" class="secondary-button">
+            Open live radar map
+          </a>
+          <button id="resetDemo" class="secondary-button" type="button">
+            Reset demo data
+          </button>
+        </div>
+
+        <ul class="trust-row" aria-label="Key impact stats">
+          <li>
+            <strong>1.4k+</strong>
+            <span>Meals Diverted</span>
+          </li>
+          <li>
+            <strong>12 min</strong>
+            <span>Avg Courier ETA</span>
+          </li>
+          <li>
+            <strong>98.4%</strong>
+            <span>Intake Success Rate</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="hero-panel">
+        <div class="panel-header">
+          <span class="panel-badge">
+            <span class="dispatch-dot"></span> Live Telemetry
+          </span>
+          <span class="panel-status">Real-time sync</span>
+        </div>
+
+        <div class="panel-grid">
+          <article>
+            <span>Meals rescued</span>
+            <strong id="heroMealsCount">245</strong>
+          </article>
+          <article>
+            <span>Active couriers</span>
+            <strong id="heroDriversCount">4</strong>
+          </article>
+          <article>
+            <span>Food diverted</span>
+            <strong id="heroWeightCount">320 kg</strong>
+          </article>
+          <article>
+            <span>CO₂e avoided</span>
+            <strong id="heroCO2Count">800 kg</strong>
+          </article>
+        </div>
+
+        <div class="mini-donation">
+          <div class="mini-label">Priority Dispatch</div>
+          <h3 id="heroPriorityTitle">Vegetable pulao & dal</h3>
+          <div class="mini-meta">
+            <span id="heroPriorityQty">35 meals</span>
+            <span id="heroPriorityArea">Malviya Nagar</span>
+            <span>🔥 Insulated</span>
+            <span id="heroPriorityDriver">Driver: Rahul Sharma</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs" aria-label="Dashboard sections">
+      <button class="tab active" data-tab="donations">
+        🍱 Active Donations <span id="donationTabCount">0</span>
+      </button>
+      <button class="tab" data-tab="recipients">
+        🏢 Shelters & Capacity <span id="shelterTabCount">4</span>
+      </button>
+      <button class="tab" data-tab="dispatch">
+        🚗 Fleet Dispatch <span id="driverTabCount">4</span>
+      </button>
+      <button class="tab" data-tab="analytics">
+        📊 ESG Impact & Analytics
+      </button>
+    </nav>
+
+    <!-- Panel 1: Donations Board -->
+    <section id="donations" class="tab-panel active">
+      <div class="section-head">
+        <div>
+          <h2>Surplus Rescue Board</h2>
+          <p>Real-time surplus listings with automated haversine routing and courier dispatch.</p>
+        </div>
+        <button class="primary-button" id="openForm" type="button"><span>＋</span> Post surplus</button>
+      </div>
+
+      <!-- Advanced Filter Container -->
+      <div class="filter-container">
+        <div class="search-row">
+          <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search by food item, donor, or neighborhood...">
+          </div>
+
+          <div class="filter-controls">
+            <select id="statusFilter" class="filter-select" aria-label="Filter status">
+              <option value="all">All statuses</option>
+              <option value="available">Available (Unassigned)</option>
+              <option value="matched">Matched / In Transit</option>
+              <option value="picked-up">Delivered</option>
+            </select>
+
+            <select id="storageFilter" class="filter-select" aria-label="Filter temperature">
+              <option value="all">All storage types</option>
+              <option value="Hot/Insulated">🔥 Hot / Insulated</option>
+              <option value="Refrigerated">❄️ Cold Chain</option>
+              <option value="Ambient">📦 Ambient / Dry</option>
+            </select>
+
+            <select id="sortOrder" class="filter-select" aria-label="Sort order">
+              <option value="urgency">Sort: Urgent expiry first</option>
+              <option value="quantity">Sort: Largest quantity first</option>
+              <option value="distance">Sort: Nearest distance</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="category-chips" id="categoryChips">
+          <button class="cat-chip active" data-cat="all">All Items</button>
+          <button class="cat-chip" data-cat="Prepared">🍲 Prepared Meals</button>
+          <button class="cat-chip" data-cat="Bakery">🍞 Bakery</button>
+          <button class="cat-chip" data-cat="Produce">🥬 Fresh Produce</button>
+          <button class="cat-chip" data-cat="Dairy">🥛 Dairy</button>
+          <button class="cat-chip" data-cat="Pantry">🥫 Pantry / Dry</button>
+        </div>
+      </div>
+
+      <div id="donationList" class="donation-list"></div>
+    </section>
+
+    <!-- Panel 2: Shelters & Capacity -->
+    <section id="recipients" class="tab-panel">
+      <div class="section-head">
+        <div>
+          <h2>Verified Shelters & Community Kitchens</h2>
+          <p>Real-time intake capacity, dock receiving hours, and dietary preferences.</p>
+        </div>
+      </div>
+      <div id="recipientList" class="recipient-grid"></div>
+    </section>
+
+    <!-- Panel 3: Fleet Dispatch Operations -->
+    <section id="dispatch" class="tab-panel">
+      <div class="section-head">
+        <div>
+          <h2>Volunteer Courier Fleet Dispatch</h2>
+          <p>Active volunteer couriers with vehicle specifications and live delivery assignments.</p>
+        </div>
+      </div>
+      <div id="driverList" class="driver-grid"></div>
+    </section>
+
+    <!-- Panel 4: ESG Impact & Analytics -->
+    <section id="analytics" class="tab-panel">
+      <div class="section-head">
+        <div>
+          <h2>ESG Environmental & Social Governance Report</h2>
+          <p>Verified carbon emission avoidance, water footprint preservation, and hunger relief metrics.</p>
+        </div>
+        <button class="secondary-button" id="printCertBtn">
+          <span>📜</span> View Impact Certificate
+        </button>
+      </div>
+
+      <div class="esg-banner">
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 4px;">Cumulative Lifetime Environmental Diversion</h3>
+        <p style="font-size: 0.84rem; color: var(--text-muted);">Calculated using verified EPA WARM methodologies ($2.5\text{ kg CO}_2\text{e}$ per kg food waste diverted).</p>
+
+        <div class="esg-grid">
+          <div class="esg-stat-tile">
+            <h4 id="esgMeals">245</h4>
+            <p>Meals Rescued</p>
+          </div>
+          <div class="esg-stat-tile">
+            <h4 id="esgWeight">320 kg</h4>
+            <p>Food Waste Diverted</p>
+          </div>
+          <div class="esg-stat-tile">
+            <h4 id="esgCO2">800 kg</h4>
+            <p>CO₂e Avoided</p>
+          </div>
+          <div class="esg-stat-tile">
+            <h4 id="esgWater">304k L</h4>
+            <p>Water Footprint Saved</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="category-breakdown-box">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 14px;">Diversion Share by Food Category</h3>
+        <div id="categoryBreakdownBars"></div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Surplus to Shelter · Enterprise Community Food Redistribution Platform</span>
+    </footer>
+  </main>
+
+  <!-- Add Donation Modal -->
+  <dialog id="donationDialog">
+    <form id="donationForm">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">NEW SURPLUS POSTING</p>
+          <h2>Post Surplus Food</h2>
+        </div>
+        <button class="close-button" type="button" id="closeForm" aria-label="Close">×</button>
+      </div>
+
+      <label>
+        Food item description
+        <input name="item" id="formItem" required maxlength="80" placeholder="e.g. 30 servings Vegetable Biryani & Raita">
+      </label>
+
+      <div class="form-row">
+        <label>
+          Category
+          <select name="category" id="formCategory">
+            <option value="Prepared">🍲 Prepared Meals</option>
+            <option value="Bakery">🍞 Bakery</option>
+            <option value="Produce">🥬 Fresh Produce</option>
+            <option value="Dairy">🥛 Dairy</option>
+            <option value="Pantry">🥫 Pantry / Dry</option>
+          </select>
+        </label>
+        <label>
+          Storage requirement
+          <select name="storageTemp" id="formStorage">
+            <option value="Hot/Insulated">🔥 Hot / Insulated Container</option>
+            <option value="Refrigerated">❄️ Cold Chain / Refrigerated</option>
+            <option value="Ambient">📦 Ambient / Room Temp</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          Quantity
+          <input name="quantity" id="formQuantity" required type="number" min="1" max="1000" placeholder="25">
+        </label>
+        <label>
+          Unit of measure
+          <select name="unit" id="formUnit">
+            <option value="meals">meals</option>
+            <option value="kg">kg</option>
+            <option value="boxes">boxes</option>
+            <option value="lbs">lbs</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>
+          Pickup Area / Neighborhood
+          <div style="display: flex; gap: 6px;">
+            <input name="area" id="formArea" required maxlength="60" placeholder="e.g. Malviya Nagar or Indiranagar">
+            <button type="button" id="geoLocBtn" class="icon-btn" title="Use current GPS location" style="flex-shrink:0;">
+              📍
+            </button>
+          </div>
+        </label>
+        <label>
+          Ready-by deadline
+          <input name="expiry" id="formExpiry" required type="datetime-local">
+        </label>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <span style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 6px;">Dietary tags</span>
+        <div class="checkbox-group">
+          <label class="check-label"><input type="checkbox" name="diet" value="Vegetarian" checked> Vegetarian</label>
+          <label class="check-label"><input type="checkbox" name="diet" value="Vegan"> Vegan</label>
+          <label class="check-label"><input type="checkbox" name="diet" value="Gluten-Free"> Gluten-Free</label>
+          <label class="check-label"><input type="checkbox" name="diet" value="Halal"> Halal</label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>
+          Donor organization
+          <input name="donor" id="formDonor" required maxlength="60" placeholder="e.g. Royal Spice Banquet">
+        </label>
+        <label>
+          Donor phone / contact
+          <input name="contact" id="formContact" maxlength="20" placeholder="+91 98290 00000">
+        </label>
+      </div>
+
+      <!-- Live Route Preview Box -->
+      <div id="routePreviewBox" style="padding: 10px 14px; border-radius: var(--radius-sm); background: var(--surface-muted); border: 1px solid var(--border); margin-bottom: 16px; font-size: 0.82rem;">
+        ⚡ <strong>Haversine Match Engine:</strong> Target intake shelter will be dynamically routed upon posting.
+      </div>
+
+      <button class="primary-button full" type="submit" id="submitDonationBtn">
+        Broadcast to Network & Route to Shelter
+      </button>
+    </form>
+  </dialog>
+
+  <!-- Logistics Manifest Inspector Modal -->
+  <dialog id="manifestDialog">
+    <div class="manifest-card">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">CHAIN OF CUSTODY MANIFEST</p>
+          <h2 id="manifestItemTitle">Logistics Manifest</h2>
+        </div>
+        <button class="close-button" type="button" id="closeManifest" aria-label="Close">×</button>
+      </div>
+
+      <div id="manifestBody"></div>
+
+      <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="secondary-button" id="printManifestBtn">Print Manifest</button>
+        <button class="primary-button" id="closeManifestBtn">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="FE.js"></script>
+</body>
+</html>

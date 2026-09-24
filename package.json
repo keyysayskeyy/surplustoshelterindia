@@ -1,0 +1,13 @@
+{
+  "name": "surplus-to-shelter",
+  "version": "3.0.0",
+  "description": "Surplus to Shelter backend for AmiHacks",
+  "main": "BE.js",
+  "scripts": {
+    "start": "node BE.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
