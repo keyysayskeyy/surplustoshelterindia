@@ -15,12 +15,12 @@
 ## 🛠 Tech Stack
 * **Frontend:** HTML5, CSS3, Vanilla JavaScript, Leaflet.js mapping, Nominatim Geocoding.
 * **Backend:** Node.js, Express, RESTful API architecture.
-* **Hosting:** GitHub Pages (Frontend) paired with SSH Local Tunneling (Backend) for instantaneous demo presentation.
+* **Hosting:** GitHub Pages (Frontend) paired with GitHub environments (Backend) for stable, cloud-native deployment.
 
 ## 🚀 How to Run Locally
 To run this project on your own machine for judging or development:
 
 1. **Clone the repository:**
-   (https://keyysayskeyy.github.io/surplustoshelterindia/index.html)
+   (git clone https://github.com/keyysayskeyy/surplustoshelterindia.git)
 
 
