@@ -20,7 +20,11 @@
 ## 🚀 How to Run Locally
 To run this project on your own machine for judging or development:
 
-1. **Clone the repository:**
+**Clone the repository:**
    (git clone https://github.com/keyysayskeyy/surplustoshelterindia.git)
+
+   ## 🌐 Live Demo
+You can view and interact with the live application here: 
+[**Surplus-to-Shelter Live Site**](https://keyysayskeyy.github.io/surplustoshelterindia/index.html)
 
 
